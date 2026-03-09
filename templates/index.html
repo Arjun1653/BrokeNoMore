@@ -86,8 +86,8 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 .exp-desc { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .exp-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .exp-amt { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--accent3); flex-shrink: 0; }
-.del-btn { background: none; border: none; color: #333; cursor: pointer; font-size: 14px; padding: 4px; opacity: 0; transition: opacity 0.2s; }
-.exp-row:hover .del-btn { opacity: 1; }
+.del-btn { background: none; border: none; color: #555; cursor: pointer; font-size: 14px; padding: 4px; opacity: 1; transition: color 0.2s; }
+.del-btn:hover { color: var(--danger); }
 
 /* FORM ELEMENTS */
 .form-group { display: flex; flex-direction: column; gap: 6px; }
@@ -252,6 +252,8 @@ svg.forecast { width: 100%; height: 100px; }
             <div class="stat-sub" id="d-project-sub">end of month</div>
           </div>
         </div>
+        <!-- Hidden element for remaining (used internally) -->
+        <span id="d-remaining" style="display:none">0</span>
 
         <div class="grid-2">
           <!-- Budget progress -->
@@ -740,10 +742,11 @@ async function loadDashboard() {
   document.getElementById('d-net-sub').style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
   document.getElementById('d-budget-sub').textContent = 'of ' + fmt(d.budget);
   document.getElementById('d-remaining').textContent = fmt(d.remaining);
-  document.getElementById('d-days-left').textContent = d.days_left + ' days left';
-  document.getElementById('d-daily').textContent = fmt(d.daily_allowed);
-  document.getElementById('d-projected').textContent = fmt(d.projected);
+  document.getElementById('d-days-left').textContent = (d.days_left || 0) + ' days left';
+  document.getElementById('d-daily').textContent = fmt(d.daily_allowed || 0);
+  document.getElementById('d-projected').textContent = fmt(d.projected || 0);
   document.getElementById('d-project-sub').textContent = d.overspend > 0 ? '⚠️ overspend' : '✅ under budget';
+  document.getElementById('d-remaining') && (document.getElementById('d-remaining').textContent = fmt(d.remaining));
   document.getElementById('sidebar-points').textContent = d.points;
   document.getElementById('ch-points') && (document.getElementById('ch-points').textContent = d.points);
 
