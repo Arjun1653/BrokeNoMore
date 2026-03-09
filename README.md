@@ -41,8 +41,6 @@ python app.py
 
 Then open http://127.0.0.1:5000 in your browser.
 
-On Windows you can just double-click `START.bat` and it handles everything.
-
 ---
 
 ## AI Advisor setup (one time)
