@@ -197,6 +197,9 @@ svg.forecast { width: 100%; height: 100px; }
       <div class="nav-item" onclick="showPage('challenges')">
         <span class="nav-icon">🏆</span> Challenges
       </div>
+      <div class="nav-item" onclick="showPage('income')">
+        <span class="nav-icon">💸</span> Income
+      </div>
       <div class="nav-item" onclick="showPage('wallets')">
         <span class="nav-icon">💳</span> Wallets
       </div>
@@ -234,14 +237,14 @@ svg.forecast { width: 100%; height: 100px; }
             <div class="stat-sub" id="d-budget-sub">of ₹0</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Remaining</div>
-            <div class="stat-val" style="color:#36d9c4" id="d-remaining">₹0</div>
-            <div class="stat-sub" id="d-days-left">0 days left</div>
+            <div class="stat-label">Income This Month</div>
+            <div class="stat-val" style="color:#2ed573" id="d-income">₹0</div>
+            <div class="stat-sub" id="d-net-sub">net ₹0</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Daily Budget</div>
             <div class="stat-val" style="color:#7c6af7" id="d-daily">₹0</div>
-            <div class="stat-sub">per day allowed</div>
+            <div class="stat-sub" id="d-days-left">0 days left</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Projected</div>
@@ -588,6 +591,105 @@ svg.forecast { width: 100%; height: 100px; }
       </div>
     </div>
 
+    <!-- ─── INCOME ────────────────────────────────────────────────────── -->
+    <div id="page-income" class="page">
+      <div class="section-header">
+        <div class="section-title">Income</div>
+        <button class="btn btn-ghost" onclick="loadIncome()">🔄 Refresh</button>
+      </div>
+      <div class="gap-16">
+
+        <!-- Summary stats -->
+        <div class="grid-3">
+          <div class="stat-card" style="border-color:rgba(46,213,115,0.25);background:rgba(46,213,115,0.04);">
+            <div class="stat-label">This Month</div>
+            <div class="stat-val" style="color:#2ed573" id="inc-month">₹0</div>
+            <div class="stat-sub">total credited</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Ever</div>
+            <div class="stat-val" style="color:#36d9c4" id="inc-total">₹0</div>
+            <div class="stat-sub">all time</div>
+          </div>
+          <div class="stat-card" id="inc-net-card">
+            <div class="stat-label">Net This Month</div>
+            <div class="stat-val" id="inc-net">₹0</div>
+            <div class="stat-sub">income minus expenses</div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="align-items:start;">
+          <!-- Add income form -->
+          <div class="card">
+            <div class="card-title">Add Income</div>
+            <div class="gap-12">
+              <div class="form-group">
+                <label class="form-label">Source</label>
+                <input class="form-input" id="inc-source" placeholder="e.g. Salary, Freelance, Rent received...">
+              </div>
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label">Amount (₹)</label>
+                  <input class="form-input" id="inc-amount" type="number" placeholder="0">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Date</label>
+                  <input class="form-input" id="inc-date" type="date">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Category</label>
+                <select class="form-input" id="inc-category">
+                  <option>Salary</option>
+                  <option>Freelance</option>
+                  <option>Business</option>
+                  <option>Investment</option>
+                  <option>Gift</option>
+                  <option>Refund</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Credited To</label>
+                <div class="pill-group" id="inc-wallet-pills">
+                  <button class="pill active" onclick="selectIncomeWallet('Bank',this)">🏦 Bank</button>
+                  <button class="pill" onclick="selectIncomeWallet('UPI',this)">📲 UPI</button>
+                  <button class="pill" onclick="selectIncomeWallet('Cash',this)">💵 Cash</button>
+                  <button class="pill" onclick="selectIncomeWallet('Credit Card',this)">💳 Credit Card</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Note (optional)</label>
+                <input class="form-input" id="inc-note" placeholder="e.g. March salary, Client payment...">
+              </div>
+              <button class="btn btn-primary" style="background:linear-gradient(135deg,#2ed573,#17a34a);" onclick="submitIncome()">Add Income</button>
+            </div>
+          </div>
+
+          <!-- By category + source breakdown -->
+          <div class="gap-16">
+            <div class="card">
+              <div class="card-title">By Category</div>
+              <div id="inc-by-cat"><div style="color:var(--muted);font-size:13px;">No data yet</div></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Top Sources</div>
+              <div id="inc-by-source"><div style="color:var(--muted);font-size:13px;">No data yet</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Income history -->
+        <div class="card">
+          <div class="card-title">Income History</div>
+          <div class="scroll-list" id="income-list">
+            <div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">No income logged yet.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -615,6 +717,7 @@ function showPage(name) {
   if (name==='dashboard') loadDashboard();
   if (name==='insights') loadInsights();
   if (name==='subscriptions') loadSubs();
+  if (name==='income') { loadIncome(); document.getElementById('inc-date').value = new Date().toISOString().split('T')[0]; }
   if (name==='challenges') loadChallenges();
   if (name==='wallets') loadWallets();
   if (name==='add') {
@@ -631,6 +734,10 @@ async function loadDashboard() {
 
   document.getElementById('d-balance').textContent = fmt(d.balance);
   document.getElementById('d-spent').textContent = fmt(d.spent);
+  document.getElementById('d-income').textContent = fmt(d.income_this_month || 0);
+  const net = d.net_this_month || 0;
+  document.getElementById('d-net-sub').textContent = 'net ' + fmt(net);
+  document.getElementById('d-net-sub').style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
   document.getElementById('d-budget-sub').textContent = 'of ' + fmt(d.budget);
   document.getElementById('d-remaining').textContent = fmt(d.remaining);
   document.getElementById('d-days-left').textContent = d.days_left + ' days left';
@@ -1027,6 +1134,104 @@ async function clearAll() {
   const exps = await fetch('/api/expenses?month=all');
   // Just reload — user confirmed
   location.reload();
+}
+
+// ── INCOME ────────────────────────────────────────────────────────────────────
+let selectedIncomeWallet = 'Bank';
+
+function selectIncomeWallet(name, el) {
+  selectedIncomeWallet = name;
+  document.querySelectorAll('#inc-wallet-pills .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function loadIncome() {
+  const [summaryRes, monthIncome, spent] = await Promise.all([
+    fetch('/api/income/summary'),
+    fetch('/api/dashboard').then(r => r.json()),
+    Promise.resolve(0),
+  ]);
+  const summary = await summaryRes.json();
+  const dash = monthIncome;
+
+  // Stats
+  document.getElementById('inc-month').textContent = fmt(dash.income_this_month || 0);
+  document.getElementById('inc-total').textContent = fmt(summary.total || 0);
+  const net = (dash.income_this_month || 0) - (dash.spent || 0);
+  const netEl = document.getElementById('inc-net');
+  netEl.textContent = fmt(net);
+  netEl.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
+
+  // By category
+  const catEl = document.getElementById('inc-by-cat');
+  const total = summary.total || 1;
+  catEl.innerHTML = summary.by_category && summary.by_category.length
+    ? summary.by_category.map(([cat, amt]) => {
+        const pct = Math.round(amt / total * 100);
+        const colors = {Salary:'#2ed573',Freelance:'#36d9c4',Business:'#7c6af7',Investment:'#ffc94a',Gift:'#ff6b6b',Refund:'#ff8b94',Other:'#888'};
+        return `<div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px;">
+            <span>${cat}</span><span style="color:var(--muted);font-family:'DM Mono',monospace;">${fmt(amt)}</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${colors[cat]||'#2ed573'}"></div></div>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--muted);font-size:13px;">No income yet</div>';
+
+  // By source
+  const srcEl = document.getElementById('inc-by-source');
+  srcEl.innerHTML = summary.by_source && summary.by_source.length
+    ? summary.by_source.slice(0, 5).map(([src, amt]) => `
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+          <span style="color:var(--text);">${src}</span>
+          <span style="font-family:'DM Mono',monospace;color:#2ed573;">${fmt(amt)}</span>
+        </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;">No data yet</div>';
+
+  // History list
+  const listEl = document.getElementById('income-list');
+  listEl.innerHTML = summary.all && summary.all.length
+    ? summary.all.map(i => `
+        <div class="exp-row">
+          <div class="exp-icon" style="background:rgba(46,213,115,0.12);font-size:20px;">💸</div>
+          <div class="exp-info">
+            <div class="exp-desc">${i.source}</div>
+            <div class="exp-meta">${i.category} · ${i.wallet} · ${i.date}${i.note ? ' · ' + i.note : ''}</div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:14px;color:#2ed573;flex-shrink:0;">+${fmt(i.amount)}</div>
+          <button class="del-btn" onclick="deleteIncome(${i.id})">🗑</button>
+        </div>`).join('')
+    : '<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">No income logged yet.</div>';
+}
+
+async function submitIncome() {
+  const source = document.getElementById('inc-source').value.trim();
+  const amount = document.getElementById('inc-amount').value;
+  if (!source || !amount) { alert('Please fill source and amount'); return; }
+  const body = {
+    source,
+    amount: Number(amount),
+    category: document.getElementById('inc-category').value,
+    wallet: selectedIncomeWallet,
+    note: document.getElementById('inc-note').value,
+    date: document.getElementById('inc-date').value || new Date().toISOString().split('T')[0],
+  };
+  const r = await fetch('/api/income', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  const d = await r.json();
+  if (d.ok) {
+    document.getElementById('inc-source').value = '';
+    document.getElementById('inc-amount').value = '';
+    document.getElementById('inc-note').value = '';
+    const btn = event.currentTarget;
+    btn.textContent = '✅ Added!';
+    setTimeout(() => { btn.textContent = 'Add Income'; }, 1500);
+    loadIncome();
+  }
+}
+
+async function deleteIncome(id) {
+  await fetch('/api/income/'+id, {method:'DELETE'});
+  loadIncome();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────

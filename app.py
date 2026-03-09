@@ -62,6 +62,16 @@ def init_db():
             key TEXT PRIMARY KEY,
             value TEXT
         );
+        CREATE TABLE IF NOT EXISTS income (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source TEXT NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT NOT NULL DEFAULT 'Salary',
+            wallet TEXT NOT NULL DEFAULT 'Bank',
+            note TEXT DEFAULT '',
+            date TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
         INSERT OR IGNORE INTO wallets VALUES ('Cash', 5000);
         INSERT OR IGNORE INTO wallets VALUES ('Bank', 20000);
         INSERT OR IGNORE INTO wallets VALUES ('UPI', 10000);
@@ -99,6 +109,14 @@ def month_spent():
         ).fetchone()
         return float(r["s"])
 
+def month_income():
+    with get_db() as db:
+        r = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM income WHERE date LIKE ?",
+            (current_month() + "%",)
+        ).fetchone()
+        return float(r["s"])
+
 # ── EXPENSE ROUTES ────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
@@ -120,6 +138,10 @@ def dashboard():
         ).fetchall()]
         subs = [dict(r) for r in db.execute("SELECT * FROM subscriptions WHERE active=1").fetchall()]
         total_sub = sum(s["amount"] for s in subs)
+        income_this_month = month_income()
+        recent_income = [dict(r) for r in db.execute(
+            "SELECT * FROM income ORDER BY date DESC, id DESC LIMIT 5"
+        ).fetchall()]
 
     total_balance = sum(wallets.values())
     daily_allowed = (budget - spent) / max(days_left, 1)
@@ -149,6 +171,9 @@ def dashboard():
         "subs": subs,
         "total_sub": total_sub,
         "points": int(setting("points") or 0),
+        "income_this_month": income_this_month,
+        "net_this_month": income_this_month - spent,
+        "recent_income": recent_income,
     })
 
 @app.route("/api/expenses")
@@ -327,6 +352,69 @@ def complete_challenge(cid):
     pts = int(setting("points") or 0) + 150
     set_setting("points", pts)
     return jsonify({"ok": True, "points": pts})
+
+# ── INCOME ROUTES ─────────────────────────────────────────────────────────────
+@app.route("/api/income", methods=["GET"])
+def get_income():
+    month = request.args.get("month", "all")
+    with get_db() as db:
+        if month == "all":
+            rows = [dict(r) for r in db.execute("SELECT * FROM income ORDER BY date DESC, id DESC").fetchall()]
+        else:
+            rows = [dict(r) for r in db.execute(
+                "SELECT * FROM income WHERE date LIKE ? ORDER BY date DESC, id DESC",
+                (month + "%",)
+            ).fetchall()]
+    return jsonify(rows)
+
+@app.route("/api/income", methods=["POST"])
+def add_income():
+    d = request.json
+    source = d.get("source", "").strip()
+    amount = float(d.get("amount", 0))
+    category = d.get("category", "Salary")
+    wallet = d.get("wallet", "Bank")
+    note = d.get("note", "")
+    date = d.get("date", today())
+    if not source or amount <= 0:
+        return jsonify({"ok": False, "error": "Source and amount required"}), 400
+    with get_db() as db:
+        db.execute(
+            "INSERT INTO income (source, amount, category, wallet, note, date) VALUES (?,?,?,?,?,?)",
+            (source, amount, category, wallet, note, date)
+        )
+        db.execute("UPDATE wallets SET balance = balance + ? WHERE name = ?", (amount, wallet))
+    return jsonify({"ok": True})
+
+@app.route("/api/income/<int:iid>", methods=["DELETE"])
+def delete_income(iid):
+    with get_db() as db:
+        row = db.execute("SELECT * FROM income WHERE id=?", (iid,)).fetchone()
+        if row:
+            db.execute("UPDATE wallets SET balance = balance - ? WHERE name = ?", (row["amount"], row["wallet"]))
+            db.execute("DELETE FROM income WHERE id=?", (iid,))
+    return jsonify({"ok": True})
+
+@app.route("/api/income/summary")
+def income_summary():
+    with get_db() as db:
+        all_income = [dict(r) for r in db.execute("SELECT * FROM income ORDER BY date DESC").fetchall()]
+    by_month = {}
+    by_source = {}
+    by_category = {}
+    for r in all_income:
+        m = r["date"][:7]
+        by_month[m] = by_month.get(m, 0) + r["amount"]
+        by_source[r["source"]] = by_source.get(r["source"], 0) + r["amount"]
+        by_category[r["category"]] = by_category.get(r["category"], 0) + r["amount"]
+    total = sum(r["amount"] for r in all_income)
+    return jsonify({
+        "total": total,
+        "by_month": sorted(by_month.items()),
+        "by_source": sorted(by_source.items(), key=lambda x: -x[1]),
+        "by_category": sorted(by_category.items(), key=lambda x: -x[1]),
+        "all": all_income,
+    })
 
 @app.route("/api/export/csv")
 def export_csv():
