@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Expense Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080810;
+  --surface: #0f0f1a;
+  --card: #13131f;
+  --border: #1e1e30;
+  --accent: #7c6af7;
+  --accent2: #36d9c4;
+  --accent3: #ff6b6b;
+  --accent4: #ffc94a;
+  --text: #e8e8f0;
+  --muted: #6b6b88;
+  --danger: #ff4757;
+  --success: #2ed573;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--surface); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* LAYOUT */
+.app { display: flex; height: 100vh; }
+.sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 0; flex-shrink: 0; }
+.main { flex: 1; overflow-y: auto; padding: 28px; }
+
+/* SIDEBAR */
+.logo { padding: 0 20px 28px; }
+.logo-name { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 20px; cursor: pointer; font-size: 14px; color: var(--muted); transition: all 0.2s; border-left: 2px solid transparent; }
+.nav-item:hover { color: var(--text); background: rgba(124,106,247,0.06); }
+.nav-item.active { color: var(--accent); background: rgba(124,106,247,0.1); border-left-color: var(--accent); }
+.nav-icon { font-size: 18px; width: 22px; text-align: center; }
+.sidebar-bottom { margin-top: auto; padding: 0 20px; }
+.points-badge { background: linear-gradient(135deg, rgba(124,106,247,0.2), rgba(54,217,196,0.2)); border: 1px solid rgba(124,106,247,0.3); border-radius: 12px; padding: 12px; text-align: center; }
+.points-val { font-family: 'DM Mono', monospace; font-size: 22px; color: var(--accent4); font-weight: 600; }
+.points-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+/* CARDS */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+.card-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.gap-16 { display: flex; flex-direction: column; gap: 16px; }
+.gap-12 { display: flex; flex-direction: column; gap: 12px; }
+
+/* STAT CARDS */
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+.stat-val { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 600; }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* BALANCE HERO */
+.hero-card { background: linear-gradient(135deg, #0f0f2a, #131328); border: 1px solid rgba(124,106,247,0.25); border-radius: 20px; padding: 28px; position: relative; overflow: hidden; }
+.hero-card::before { content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(124,106,247,0.15), transparent 70%); border-radius: 50%; }
+.hero-bal-label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+.hero-bal { font-family: 'DM Mono', monospace; font-size: 42px; font-weight: 600; color: #fff; margin: 6px 0; }
+.wallet-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--muted); }
+.chip span { color: var(--accent2); }
+
+/* PROGRESS BAR */
+.progress-bar { background: #1a1a2e; border-radius: 999px; height: 8px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+
+/* SCORE RING */
+.score-wrap { display: flex; align-items: center; gap: 16px; }
+.score-ring { position: relative; flex-shrink: 0; }
+.score-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 600; }
+.score-insights { flex: 1; }
+.insight-item { font-size: 12px; color: var(--muted); padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03); line-height: 1.5; }
+.insight-item:last-child { border-bottom: none; }
+
+/* EXPENSES LIST */
+.exp-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.exp-row:last-child { border-bottom: none; }
+.exp-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.exp-info { flex: 1; min-width: 0; }
+.exp-desc { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exp-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.exp-amt { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--accent3); flex-shrink: 0; }
+.del-btn { background: none; border: none; color: #333; cursor: pointer; font-size: 14px; padding: 4px; opacity: 0; transition: opacity 0.2s; }
+.exp-row:hover .del-btn { opacity: 1; }
+
+/* FORM ELEMENTS */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.form-input { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 11px 14px; font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; width: 100%; transition: border-color 0.2s; }
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--muted); }
+select.form-input option { background: #1a1a2e; }
+
+.btn { padding: 12px 20px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+.btn-primary { background: linear-gradient(135deg, var(--accent), #5a4fcf); color: #fff; width: 100%; }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 7px 14px; font-size: 12px; }
+.btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+.btn-danger { background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.3); color: var(--danger); }
+
+/* PILL SELECTOR */
+.pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); color: var(--muted); background: transparent; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ALERTS */
+.alert { border-radius: 10px; padding: 10px 14px; font-size: 13px; }
+.alert-danger { background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.25); color: #ff6b6b; }
+.alert-warn { background: rgba(255,201,74,0.08); border: 1px solid rgba(255,201,74,0.2); color: var(--accent4); }
+
+/* AI BUBBLE */
+.ai-bubble { background: linear-gradient(135deg, #0f0f2a, #131328); border: 1px solid rgba(124,106,247,0.25); border-radius: 14px; padding: 18px; font-size: 13px; line-height: 1.8; color: #ccc; white-space: pre-wrap; }
+.ai-header { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.ai-thinking { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+.dot:nth-child(2) { animation-delay: 0.4s; }
+.dot:nth-child(3) { animation-delay: 0.8s; }
+@keyframes pulse { 0%,100%{opacity:0.2;transform:scale(0.8)} 50%{opacity:1;transform:scale(1)} }
+
+/* CHART */
+.bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 80px; }
+.bar { flex: 1; border-radius: 4px 4px 0 0; min-width: 8px; transition: height 0.5s ease; cursor: pointer; position: relative; }
+.bar-label { position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%); font-size: 8px; color: var(--muted); white-space: nowrap; }
+
+/* CATEGORY BAR */
+.cat-row { margin-bottom: 12px; }
+.cat-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
+.cat-amt { font-family: 'DM Mono', monospace; color: var(--muted); font-size: 12px; }
+
+/* ANOMALY */
+.anomaly-card { background: rgba(255,71,87,0.06); border: 1px solid rgba(255,71,87,0.15); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+.anomaly-msg { font-size: 12px; color: var(--accent3); margin-top: 4px; }
+
+/* CHALLENGE */
+.challenge-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; transition: border-color 0.2s; }
+.challenge-card.completed { border-color: rgba(54,217,196,0.3); background: rgba(54,217,196,0.04); }
+.challenge-pts { background: rgba(255,201,74,0.12); border: 1px solid rgba(255,201,74,0.2); color: var(--accent4); border-radius: 8px; padding: 2px 8px; font-size: 11px; }
+
+/* TABS IN CONTENT */
+.tab-group { display: flex; gap: 4px; background: var(--surface); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+.tab-btn { flex: 1; padding: 8px; border: none; background: transparent; color: var(--muted); border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+.tab-btn.active { background: var(--card); color: var(--text); }
+
+/* FORECAST LINE */
+.forecast-line { height: 60px; background: linear-gradient(to top, rgba(124,106,247,0.1), transparent); border-radius: 8px; position: relative; overflow: hidden; }
+
+/* RECEIPT UPLOAD */
+.receipt-drop { border: 2px dashed var(--border); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+.receipt-drop:hover { border-color: var(--accent); }
+
+/* SECTION HEADER */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; animation: fadeUp 0.3s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* SCROLLABLE LIST */
+.scroll-list { max-height: 400px; overflow-y: auto; }
+
+/* FORECAST SVG */
+svg.forecast { width: 100%; height: 100px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-name">₹ Spendly</div>
+      <div class="logo-sub">ML-Powered</div>
+    </div>
+    <nav>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">🏠</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('add')">
+        <span class="nav-icon">➕</span> Add Expense
+      </div>
+      <div class="nav-item" onclick="showPage('insights')">
+        <span class="nav-icon">📊</span> Insights
+      </div>
+      <div class="nav-item" onclick="showPage('advisor')">
+        <span class="nav-icon">🤖</span> AI Advisor
+      </div>
+      <div class="nav-item" onclick="showPage('subscriptions')">
+        <span class="nav-icon">📱</span> Subscriptions
+      </div>
+      <div class="nav-item" onclick="showPage('challenges')">
+        <span class="nav-icon">🏆</span> Challenges
+      </div>
+      <div class="nav-item" onclick="showPage('wallets')">
+        <span class="nav-icon">💳</span> Wallets
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="points-badge">
+        <div class="points-val" id="sidebar-points">0</div>
+        <div class="points-label">⭐ Points</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- ─── DASHBOARD ─────────────────────────────────────────────────── -->
+    <div id="page-dashboard" class="page active">
+      <div class="section-header">
+        <div class="section-title">Dashboard</div>
+        <div style="display:flex;gap:8px;" id="alert-badges"></div>
+      </div>
+      <div class="gap-16">
+        <!-- Hero balance -->
+        <div class="hero-card">
+          <div class="hero-bal-label">Total Balance</div>
+          <div class="hero-bal" id="d-balance">₹0</div>
+          <div class="wallet-chips" id="d-wallet-chips"></div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="grid-4">
+          <div class="stat-card">
+            <div class="stat-label">Spent</div>
+            <div class="stat-val" style="color:#ff6b6b" id="d-spent">₹0</div>
+            <div class="stat-sub" id="d-budget-sub">of ₹0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Remaining</div>
+            <div class="stat-val" style="color:#36d9c4" id="d-remaining">₹0</div>
+            <div class="stat-sub" id="d-days-left">0 days left</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Daily Budget</div>
+            <div class="stat-val" style="color:#7c6af7" id="d-daily">₹0</div>
+            <div class="stat-sub">per day allowed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Projected</div>
+            <div class="stat-val" id="d-projected" style="color:#ffc94a">₹0</div>
+            <div class="stat-sub" id="d-project-sub">end of month</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Budget progress -->
+          <div class="card">
+            <div class="card-title">Monthly Budget</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;">
+              <span id="d-budget-label">₹0 / ₹0</span>
+              <span id="d-budget-pct" style="color:var(--muted)">0%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="d-budget-bar" style="width:0%;background:linear-gradient(90deg,#7c6af7,#36d9c4)"></div>
+            </div>
+            <div style="margin-top:12px;">
+              <label style="font-size:11px;color:var(--muted)">Adjust Budget: </label>
+              <input type="range" id="budget-slider" min="5000" max="200000" step="1000" style="width:100%;accent-color:var(--accent);margin-top:6px;" oninput="updateBudget(this.value)">
+              <div style="text-align:center;font-family:'DM Mono',monospace;font-size:14px;color:var(--accent);margin-top:4px;" id="budget-slider-val">₹30,000</div>
+            </div>
+          </div>
+
+          <!-- Habit Score -->
+          <div class="card">
+            <div class="card-title">Habit Score</div>
+            <div class="score-wrap">
+              <div class="score-ring">
+                <svg width="80" height="80" viewBox="0 0 80 80" style="transform:rotate(-90deg)">
+                  <circle cx="40" cy="40" r="32" fill="none" stroke="#1e1e30" stroke-width="9"/>
+                  <circle cx="40" cy="40" r="32" fill="none" id="score-circle"
+                    stroke="#7c6af7" stroke-width="9" stroke-linecap="round"
+                    stroke-dasharray="0 201" style="transition:stroke-dasharray 0.8s ease"/>
+                </svg>
+                <div class="score-num" id="score-num">50</div>
+              </div>
+              <div class="score-insights" id="habit-insights">
+                <div class="insight-item" style="color:var(--muted);font-style:italic">Loading insights...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Expenses -->
+        <div class="card">
+          <div class="card-title">Recent Expenses</div>
+          <div class="scroll-list" id="recent-list">
+            <div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">No expenses yet. Add your first one! →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── ADD EXPENSE ───────────────────────────────────────────────── -->
+    <div id="page-add" class="page">
+      <div class="section-header">
+        <div class="section-title">Add Expense</div>
+      </div>
+      <div class="grid-2" style="gap:20px;align-items:start;">
+        <!-- Form -->
+        <div class="gap-16">
+          <!-- Receipt upload -->
+          <div class="card">
+            <div class="card-title">📸 Scan Receipt (AI)</div>
+            <div class="receipt-drop" onclick="document.getElementById('receipt-input').click()" id="receipt-drop">
+              <div style="font-size:36px;margin-bottom:8px">📸</div>
+              <div style="font-size:13px;color:var(--muted)">Click to upload bill/receipt</div>
+              <div style="font-size:11px;color:#444;margin-top:4px">AI will extract details automatically</div>
+            </div>
+            <input type="file" id="receipt-input" accept="image/*" style="display:none" onchange="scanReceipt(this)">
+          </div>
+
+          <!-- Manual form -->
+          <div class="card">
+            <div class="card-title">Manual Entry</div>
+            <div class="gap-12">
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <input class="form-input" id="f-desc" placeholder="e.g. Lunch at Paradise Biryani" oninput="autoDetectCategory()">
+              </div>
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label">Amount (₹)</label>
+                  <input class="form-input" id="f-amount" type="number" placeholder="0">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Date</label>
+                  <input class="form-input" id="f-date" type="date">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Category <span style="color:#36d9c4;font-size:10px" id="ml-badge"></span></label>
+                <select class="form-input" id="f-category">
+                  <option>Food</option><option>Transport</option><option>Shopping</option>
+                  <option>Entertainment</option><option>Health</option><option>Utilities</option>
+                  <option>Rent</option><option>Subscriptions</option><option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <div class="pill-group" id="wallet-pills">
+                  <button class="pill active" onclick="selectWallet('UPI',this)">📲 UPI</button>
+                  <button class="pill" onclick="selectWallet('Cash',this)">💵 Cash</button>
+                  <button class="pill" onclick="selectWallet('Bank',this)">🏦 Bank</button>
+                  <button class="pill" onclick="selectWallet('Credit Card',this)">💳 Credit Card</button>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="submitExpense()">Add Expense (+10 pts)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick tips -->
+        <div class="gap-16">
+          <div class="card">
+            <div class="card-title">⚡ Quick Add</div>
+            <div class="gap-12" id="quick-adds">
+              <div style="font-size:12px;color:var(--muted)">Common expenses for quick logging:</div>
+            </div>
+          </div>
+          <div class="card" id="ai-category-suggest" style="display:none;">
+            <div class="card-title">🤖 ML Category Detected</div>
+            <div id="category-explain" style="font-size:13px;color:var(--muted);line-height:1.6;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── INSIGHTS ──────────────────────────────────────────────────── -->
+    <div id="page-insights" class="page">
+      <div class="section-header">
+        <div class="section-title">Insights</div>
+        <button class="btn btn-ghost" onclick="loadInsights()">🔄 Refresh</button>
+      </div>
+
+      <div class="gap-16">
+        <div class="grid-2">
+          <!-- Category breakdown -->
+          <div class="card">
+            <div class="card-title">This Month By Category</div>
+            <div id="cat-breakdown">Loading...</div>
+          </div>
+
+          <!-- Daily spend chart -->
+          <div class="card">
+            <div class="card-title">Daily Spending</div>
+            <div class="bar-chart" id="day-chart" style="margin-bottom:20px;"></div>
+          </div>
+        </div>
+
+        <!-- Anomalies -->
+        <div class="card" id="anomaly-section">
+          <div class="card-title">🔍 Anomaly Detection (ML)</div>
+          <div id="anomaly-list"><div style="color:var(--muted);font-size:13px;">Analyzing spending patterns...</div></div>
+        </div>
+
+        <!-- Spending Clusters -->
+        <div class="card">
+          <div class="card-title">🎯 Spending Clusters (K-Means ML)</div>
+          <div id="cluster-list"><div style="color:var(--muted);font-size:13px;">Clustering your expenses...</div></div>
+        </div>
+
+        <!-- Forecast -->
+        <div class="card">
+          <div class="card-title">📈 30-Day Spending Forecast (ML)</div>
+          <div id="forecast-info" style="font-size:13px;color:var(--muted);margin-bottom:12px;"></div>
+          <div id="forecast-chart" style="overflow-x:auto;"></div>
+        </div>
+
+        <!-- NL Query -->
+        <div class="card">
+          <div class="card-title">🔍 Natural Language Search</div>
+          <div style="display:flex;gap:10px;margin-bottom:12px;">
+            <input class="form-input" id="nl-query" placeholder="How much did I spend on food this month?" style="flex:1;" onkeydown="if(event.key==='Enter') nlQuery()">
+            <button class="btn btn-primary" style="width:auto;padding:11px 20px;" onclick="nlQuery()">Ask</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+            <button class="btn btn-ghost" onclick="setQuery('How much on food this month?')">Food spend</button>
+            <button class="btn btn-ghost" onclick="setQuery('What are my biggest expenses this week?')">Biggest this week</button>
+            <button class="btn btn-ghost" onclick="setQuery('Average daily spend')">Daily avg</button>
+            <button class="btn btn-ghost" onclick="setQuery('How many transport expenses this month?')">Transport count</button>
+          </div>
+          <div id="nl-answer" style="display:none;" class="ai-bubble">
+            <div class="ai-header">💬 Answer</div>
+            <div id="nl-answer-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── AI ADVISOR ─────────────────────────────────────────────────── -->
+    <div id="page-advisor" class="page">
+      <div class="section-header">
+        <div class="section-title">AI Advisor</div>
+        <div style="font-size:12px;color:var(--muted);">Powered by Claude AI + ML</div>
+      </div>
+
+      <div class="gap-16">
+        <!-- Quick prompts -->
+        <div class="grid-2">
+          <button class="card" style="cursor:pointer;text-align:left;border:none;background:var(--card);transition:border-color 0.2s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="askAdvice('Give me personalized budget advice based on my spending habits and remaining balance. Be specific.')">
+            <div style="font-size:28px;margin-bottom:8px">💰</div>
+            <div style="font-size:14px;font-weight:600;">Budget Advice</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Personalized tips based on your data</div>
+          </button>
+          <button class="card" style="cursor:pointer;text-align:left;border:none;background:var(--card);transition:border-color 0.2s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="askAdvice('Analyze my spending patterns and tell me specifically where I should cut back to save more money this month.')">
+            <div style="font-size:28px;margin-bottom:8px">📉</div>
+            <div style="font-size:14px;font-weight:600;">Where to Cut Back</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">ML-analyzed reduction opportunities</div>
+          </button>
+          <button class="card" style="cursor:pointer;text-align:left;border:none;background:var(--card);transition:border-color 0.2s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="askAdvice('Help me plan my remaining budget optimally to last till the end of the month. Give me a day-wise plan.')">
+            <div style="font-size:28px;margin-bottom:8px">📅</div>
+            <div style="font-size:14px;font-weight:600;">Month-End Plan</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Day-by-day spending plan</div>
+          </button>
+          <button class="card" style="cursor:pointer;text-align:left;border:none;background:var(--card);transition:border-color 0.2s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="askAdvice('Give me 5 powerful insights about my spending habits and what they say about my financial health.')">
+            <div style="font-size:28px;margin-bottom:8px">🏆</div>
+            <div style="font-size:14px;font-weight:600;">Spending Insights</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Deep-dive habit analysis</div>
+          </button>
+        </div>
+
+        <!-- Custom query -->
+        <div class="card">
+          <div class="card-title">Ask Anything</div>
+          <textarea class="form-input" id="advisor-query" style="min-height:80px;resize:vertical;" placeholder="e.g. I have ₹5000 left for 12 days, how should I spend it? Or: What's the biggest financial mistake I'm making?"></textarea>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="askAdvice(document.getElementById('advisor-query').value)">Ask AI Advisor</button>
+        </div>
+
+        <!-- AI Response -->
+        <div class="ai-bubble" id="advice-bubble" style="display:none;">
+          <div class="ai-header"><span>🤖</span> AI ADVISOR</div>
+          <div id="advice-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SUBSCRIPTIONS ──────────────────────────────────────────────── -->
+    <div id="page-subscriptions" class="page">
+      <div class="section-header">
+        <div class="section-title">Subscriptions</div>
+      </div>
+      <div class="gap-16">
+        <div class="grid-2" style="align-items:start;">
+          <div class="gap-16">
+            <div class="card">
+              <div class="card-title">Add Subscription</div>
+              <div class="gap-12">
+                <div class="form-group">
+                  <label class="form-label">Service Name</label>
+                  <input class="form-input" id="s-name" placeholder="Netflix, Spotify, Jio...">
+                </div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Amount (₹/month)</label>
+                    <input class="form-input" id="s-amount" type="number" placeholder="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Billing Day</label>
+                    <input class="form-input" id="s-day" type="number" min="1" max="31" placeholder="1">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Category</label>
+                  <select class="form-input" id="s-category">
+                    <option>Subscriptions</option><option>Entertainment</option><option>Utilities</option><option>Health</option><option>Other</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary" onclick="addSub()">Add Subscription</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Active Subscriptions</div>
+            <div id="subs-list"><div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center;">No subscriptions tracked</div></div>
+            <div id="subs-total" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--muted);">Total/month</span>
+              <span style="font-family:'DM Mono',monospace;color:var(--accent4);" id="subs-total-val">₹0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── CHALLENGES ─────────────────────────────────────────────────── -->
+    <div id="page-challenges" class="page">
+      <div class="section-header">
+        <div class="section-title">Challenges 🏆</div>
+        <div style="font-size:12px;color:var(--muted);">Gamify your finances</div>
+      </div>
+      <div class="gap-16">
+        <div class="card" style="background:linear-gradient(135deg,rgba(124,106,247,0.1),rgba(54,217,196,0.1));border-color:rgba(124,106,247,0.3);">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-size:40px">⭐</div>
+            <div>
+              <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;" id="ch-points">0</div>
+              <div style="font-size:12px;color:var(--muted);">Total Points Earned</div>
+            </div>
+            <div style="margin-left:auto;font-size:13px;color:var(--muted);">Complete challenges to earn points & build better habits</div>
+          </div>
+        </div>
+
+        <!-- Create challenge -->
+        <div class="card">
+          <div class="card-title">Create Custom Challenge</div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              <input class="form-input" id="ch-title" placeholder="No eating out for 7 days">
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Date</label>
+              <input class="form-input" id="ch-end" type="date">
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="createChallenge()">Start Challenge</button>
+        </div>
+
+        <div id="challenges-list" class="gap-12"></div>
+      </div>
+    </div>
+
+    <!-- ─── WALLETS ────────────────────────────────────────────────────── -->
+    <div id="page-wallets" class="page">
+      <div class="section-header">
+        <div class="section-title">Wallets</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Balances</div>
+          <div id="wallet-edit-list" class="gap-12"></div>
+          <button class="btn btn-primary" style="margin-top:16px;" onclick="saveWallets()">Save Balances</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Export Data</div>
+          <div class="gap-12">
+            <a href="/api/export/csv" class="btn btn-ghost" style="display:block;text-align:center;text-decoration:none;padding:12px;">📥 Export as CSV</a>
+            <button class="btn btn-danger" onclick="if(confirm('Delete ALL expenses?')) clearAll()">🗑️ Clear All Expenses</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let selectedWallet = 'UPI';
+let dashData = {};
+const CATS = {
+  Food:'🍛',Transport:'🚌',Shopping:'🛍️',Entertainment:'🎬',
+  Health:'💊',Utilities:'💡',Rent:'🏠',Subscriptions:'📱',Other:'📦'
+};
+const CAT_COLORS = {
+  Food:'#FF6B6B',Transport:'#4ECDC4',Shopping:'#FFE66D',Entertainment:'#A8E6CF',
+  Health:'#FF8B94',Utilities:'#B4D4FF',Rent:'#C3A6FF',Subscriptions:'#FFB347',Other:'#D4D4D4'
+};
+const WALLET_ICONS = {Cash:'💵',Bank:'🏦',UPI:'📲','Credit Card':'💳'};
+const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name==='dashboard') loadDashboard();
+  if (name==='insights') loadInsights();
+  if (name==='subscriptions') loadSubs();
+  if (name==='challenges') loadChallenges();
+  if (name==='wallets') loadWallets();
+  if (name==='add') {
+    document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+    renderQuickAdds();
+  }
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const r = await fetch('/api/dashboard');
+  dashData = await r.json();
+  const d = dashData;
+
+  document.getElementById('d-balance').textContent = fmt(d.balance);
+  document.getElementById('d-spent').textContent = fmt(d.spent);
+  document.getElementById('d-budget-sub').textContent = 'of ' + fmt(d.budget);
+  document.getElementById('d-remaining').textContent = fmt(d.remaining);
+  document.getElementById('d-days-left').textContent = d.days_left + ' days left';
+  document.getElementById('d-daily').textContent = fmt(d.daily_allowed);
+  document.getElementById('d-projected').textContent = fmt(d.projected);
+  document.getElementById('d-project-sub').textContent = d.overspend > 0 ? '⚠️ overspend' : '✅ under budget';
+  document.getElementById('sidebar-points').textContent = d.points;
+  document.getElementById('ch-points') && (document.getElementById('ch-points').textContent = d.points);
+
+  // Wallet chips
+  document.getElementById('d-wallet-chips').innerHTML = Object.entries(d.wallets)
+    .map(([k,v]) => `<div class="chip">${WALLET_ICONS[k]||'💰'} ${k}: <span>${fmt(v)}</span></div>`).join('');
+
+  // Budget bar
+  const pct = Math.min((d.spent/d.budget)*100, 100);
+  const bar = document.getElementById('d-budget-bar');
+  bar.style.width = pct + '%';
+  bar.style.background = pct > 90 ? '#ff4757' : pct > 75 ? '#ffc94a' : 'linear-gradient(90deg,#7c6af7,#36d9c4)';
+  document.getElementById('d-budget-label').textContent = fmt(d.spent) + ' / ' + fmt(d.budget);
+  document.getElementById('d-budget-pct').textContent = Math.round(pct) + '%';
+  document.getElementById('budget-slider').value = d.budget;
+  document.getElementById('budget-slider-val').textContent = fmt(d.budget);
+
+  // Habit score
+  const score = d.score;
+  const color = score > 70 ? '#36d9c4' : score > 40 ? '#ffc94a' : '#ff4757';
+  const circle = document.getElementById('score-circle');
+  const circum = 201;
+  circle.style.strokeDasharray = `${(score/100)*circum} ${circum}`;
+  circle.style.stroke = color;
+  document.getElementById('score-num').textContent = score;
+  document.getElementById('score-num').style.color = color;
+
+  // Habit insights
+  document.getElementById('habit-insights').innerHTML = d.predictions ?
+    `<div class="insight-item">🛡️ Safe to spend today: <strong>${fmt(d.predictions.safe_to_spend_today)}</strong></div>
+     <div class="insight-item">📊 Avg daily spend: ${fmt(d.predictions.daily_avg)}</div>
+     <div class="insight-item">📱 After subscriptions: ${fmt(d.predictions.cashflow_after_subs)}</div>` : '';
+
+  // Alerts
+  const alertEl = document.getElementById('alert-badges');
+  alertEl.innerHTML = d.alerts.map(a =>
+    `<div class="alert alert-${a.type}" style="font-size:12px;padding:6px 12px;">${a.msg}</div>`
+  ).join('');
+
+  // Recent expenses
+  renderExpenseList(d.recent, 'recent-list');
+}
+
+function renderExpenseList(exps, containerId) {
+  const el = document.getElementById(containerId);
+  if (!exps || !exps.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">No expenses found.</div>';
+    return;
+  }
+  el.innerHTML = exps.map(e => `
+    <div class="exp-row">
+      <div class="exp-icon" style="background:${CAT_COLORS[e.category]||'#333'}22">${CATS[e.category]||'📦'}</div>
+      <div class="exp-info">
+        <div class="exp-desc">${e.description}</div>
+        <div class="exp-meta">${e.category} · ${e.wallet} · ${e.date}</div>
+      </div>
+      <div class="exp-amt">-${fmt(e.amount)}</div>
+      <button class="del-btn" onclick="deleteExpense(${e.id})">🗑</button>
+    </div>`).join('');
+}
+
+async function deleteExpense(id) {
+  await fetch('/api/expenses/'+id, {method:'DELETE'});
+  loadDashboard();
+}
+
+async function updateBudget(val) {
+  document.getElementById('budget-slider-val').textContent = fmt(val);
+  await fetch('/api/budget', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amount: Number(val)})});
+  loadDashboard();
+}
+
+// ── ADD EXPENSE ───────────────────────────────────────────────────────────────
+function selectWallet(name, el) {
+  selectedWallet = name;
+  document.querySelectorAll('#wallet-pills .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+let debounceTimer;
+async function autoDetectCategory() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    const desc = document.getElementById('f-desc').value;
+    const amt = document.getElementById('f-amount').value || 0;
+    if (desc.length < 3) return;
+    const r = await fetch('/api/categorize', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({description: desc, amount: amt})});
+    const d = await r.json();
+    document.getElementById('f-category').value = d.category;
+    document.getElementById('ml-badge').textContent = '✨ ML auto-detected';
+    const explain = document.getElementById('category-explain');
+    explain.textContent = `Based on your description "${desc}", the ML model classified this as "${d.category}".`;
+    document.getElementById('ai-category-suggest').style.display = 'block';
+  }, 500);
+}
+
+async function submitExpense() {
+  const desc = document.getElementById('f-desc').value.trim();
+  const amount = document.getElementById('f-amount').value;
+  if (!desc || !amount) { alert('Please fill description and amount'); return; }
+  const body = {
+    description: desc, amount: Number(amount),
+    category: document.getElementById('f-category').value,
+    wallet: selectedWallet,
+    date: document.getElementById('f-date').value || new Date().toISOString().split('T')[0]
+  };
+  const r = await fetch('/api/expenses', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  const d = await r.json();
+  document.getElementById('sidebar-points').textContent = d.points;
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-amount').value = '';
+  document.getElementById('ml-badge').textContent = '';
+  document.getElementById('ai-category-suggest').style.display = 'none';
+  // Flash success
+  const btn = event.currentTarget;
+  btn.textContent = '✅ Added!';
+  btn.style.background = 'var(--success)';
+  setTimeout(() => { btn.textContent = 'Add Expense (+10 pts)'; btn.style.background = ''; }, 1500);
+}
+
+async function scanReceipt(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const drop = document.getElementById('receipt-drop');
+  drop.innerHTML = '<div style="color:var(--accent)">🔍 AI scanning receipt...</div>';
+  const formData = new FormData();
+  formData.append('image', file);
+  const r = await fetch('/api/receipt', {method:'POST', body: formData});
+  const d = await r.json();
+  if (d.ok) {
+    document.getElementById('f-desc').value = d.description || '';
+    document.getElementById('f-amount').value = d.amount || '';
+    document.getElementById('f-category').value = d.category || 'Other';
+    document.getElementById('f-date').value = d.date || new Date().toISOString().split('T')[0];
+    drop.innerHTML = '<div style="color:var(--success)">✅ Receipt scanned! Details filled below.</div>';
+  } else {
+    drop.innerHTML = `<div style="color:var(--danger)">❌ Could not extract. ${d.error||''}</div>`;
+  }
+}
+
+function renderQuickAdds() {
+  const commons = [
+    {desc:'Swiggy order', amt:250, cat:'Food', wallet:'UPI'},
+    {desc:'Metro/Bus', amt:50, cat:'Transport', wallet:'Cash'},
+    {desc:'Chai & snacks', amt:30, cat:'Food', wallet:'Cash'},
+    {desc:'Petrol', amt:500, cat:'Transport', wallet:'UPI'},
+    {desc:'Groceries', amt:500, cat:'Food', wallet:'UPI'},
+    {desc:'Uber', amt:150, cat:'Transport', wallet:'UPI'},
+  ];
+  document.getElementById('quick-adds').innerHTML = commons.map(c => `
+    <button onclick='quickAdd(${JSON.stringify(c)})' class="btn btn-ghost" style="text-align:left;width:100%;display:flex;justify-content:space-between;">
+      <span>${CATS[c.cat]} ${c.desc}</span><span style="color:var(--accent)">${fmt(c.amt)}</span>
+    </button>`).join('');
+}
+
+async function quickAdd(c) {
+  await fetch('/api/expenses', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...c, date: new Date().toISOString().split('T')[0]})});
+  alert('✅ Added: ' + c.desc);
+}
+
+// ── INSIGHTS ──────────────────────────────────────────────────────────────────
+async function loadInsights() {
+  const r = await fetch('/api/insights');
+  const d = await r.json();
+
+  // Category breakdown
+  const catEl = document.getElementById('cat-breakdown');
+  const cats = Object.entries(d.by_category).sort((a,b) => b[1]-a[1]);
+  const total = Object.values(d.by_category).reduce((s,v) => s+v, 0);
+  catEl.innerHTML = cats.length ? cats.map(([cat, amt]) => {
+    const pct = total > 0 ? Math.round(amt/total*100) : 0;
+    return `<div class="cat-row">
+      <div class="cat-header"><span>${CATS[cat]||'📦'} ${cat}</span><span class="cat-amt">${fmt(amt)} (${pct}%)</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${CAT_COLORS[cat]||'#666'}"></div></div>
+    </div>`;
+  }).join('') : '<div style="color:var(--muted);font-size:13px;">No data this month</div>';
+
+  // Day chart
+  const dayEl = document.getElementById('day-chart');
+  const days = d.by_day.slice(-14);
+  if (days.length) {
+    const maxAmt = Math.max(...days.map(x=>x[1]));
+    dayEl.innerHTML = days.map(([date, amt]) => {
+      const h = maxAmt > 0 ? Math.round((amt/maxAmt)*75) : 4;
+      const day = date.split('-')[2];
+      return `<div class="bar" style="height:${h}px;background:linear-gradient(to top,var(--accent),var(--accent2));position:relative;" title="${date}: ${fmt(amt)}">
+        <div class="bar-label">${day}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Anomalies
+  const anomEl = document.getElementById('anomaly-list');
+  anomEl.innerHTML = d.anomalies.length ? d.anomalies.map(a => `
+    <div class="anomaly-card">
+      <div style="display:flex;justify-content:space-between;"><strong style="font-size:13px;">${a.description}</strong><span style="font-family:'DM Mono',monospace;color:var(--accent3);">${fmt(a.amount)}</span></div>
+      <div class="anomaly-msg">${a.message} (avg: ${fmt(a.avg_for_category)})</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px;">${a.date} · z-score: ${a.z_score}</div>
+    </div>`) .join('') : '<div style="color:var(--success);font-size:13px;">✅ No anomalies detected in your spending!</div>';
+
+  // Clusters
+  const clusterEl = document.getElementById('cluster-list');
+  clusterEl.innerHTML = d.clusters && d.clusters.clusters && d.clusters.clusters.length ?
+    `<div class="grid-3">` + d.clusters.clusters.map(c => `
+      <div class="stat-card">
+        <div class="stat-label">${c.label}</div>
+        <div class="stat-val" style="color:var(--accent4);font-size:18px;">${fmt(c.avg_amount)}</div>
+        <div class="stat-sub">${c.count} expenses · ${c.dominant_category}</div>
+        <div style="font-size:11px;color:#444;margin-top:6px;">${c.examples.slice(0,2).join(', ')}</div>
+      </div>`).join('') + `</div>` :
+    `<div style="color:var(--muted);font-size:13px;">${d.clusters.message || 'Add more expenses for cluster analysis'}</div>`;
+
+  // Forecast
+  const fcEl = document.getElementById('forecast-info');
+  const fcChart = document.getElementById('forecast-chart');
+  if (d.forecast && d.forecast.values && d.forecast.values.length) {
+    fcEl.textContent = d.forecast.message;
+    const vals = d.forecast.values.slice(0, 14);
+    const labels = d.forecast.labels.slice(0, 14);
+    const maxV = Math.max(...vals);
+    fcChart.innerHTML = `<div class="bar-chart" style="height:80px;margin-bottom:20px;">` +
+      vals.map((v, i) => {
+        const h = maxV > 0 ? Math.round((v/maxV)*75) : 4;
+        const day = labels[i].split('-')[2];
+        return `<div class="bar" style="height:${h}px;background:rgba(124,106,247,0.5);position:relative;" title="${labels[i]}: ${fmt(v)}">
+          <div class="bar-label">${day}</div></div>`;
+      }).join('') + '</div>';
+  } else {
+    fcEl.textContent = d.forecast.message || 'Add more expenses to generate forecast';
+    fcChart.innerHTML = '';
+  }
+}
+
+function setQuery(q) { document.getElementById('nl-query').value = q; nlQuery(); }
+async function nlQuery() {
+  const q = document.getElementById('nl-query').value;
+  if (!q) return;
+  const r = await fetch('/api/query', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({query: q})});
+  const d = await r.json();
+  document.getElementById('nl-answer').style.display = 'block';
+  document.getElementById('nl-answer-text').textContent = d.answer;
+}
+
+// ── AI ADVISOR ────────────────────────────────────────────────────────────────
+async function askAdvice(prompt) {
+  if (!prompt) return;
+  const bubble = document.getElementById('advice-bubble');
+  const textEl = document.getElementById('advice-text');
+  bubble.style.display = 'block';
+  textEl.innerHTML = '<div class="ai-thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:8px;color:var(--muted);">Analyzing your finances...</span></div>';
+  bubble.scrollIntoView({behavior:'smooth', block:'start'});
+  const r = await fetch('/api/advice', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt})});
+  const d = await r.json();
+  textEl.textContent = d.answer;
+}
+
+// ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────────
+async function loadSubs() {
+  const r = await fetch('/api/subscriptions');
+  const subs = await r.json();
+  const el = document.getElementById('subs-list');
+  const totalEl = document.getElementById('subs-total');
+  const totalVal = document.getElementById('subs-total-val');
+  if (!subs.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center;">No subscriptions tracked</div>';
+    totalEl.style.display = 'none';
+    return;
+  }
+  el.innerHTML = subs.map(s => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:500;">${s.name}</div>
+        <div style="font-size:11px;color:var(--muted);">Bills on day ${s.billing_day} · ${s.category}</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;color:var(--accent4);">${fmt(s.amount)}<span style="font-size:10px;color:var(--muted);">/mo</span></div>
+      <button onclick="deleteSub(${s.id})" class="btn btn-ghost" style="padding:5px 10px;font-size:12px;">✕</button>
+    </div>`).join('');
+  const total = subs.reduce((s,x) => s+x.amount, 0);
+  totalEl.style.display = 'flex';
+  totalVal.textContent = fmt(total);
+}
+
+async function addSub() {
+  const name = document.getElementById('s-name').value.trim();
+  const amount = document.getElementById('s-amount').value;
+  const day = document.getElementById('s-day').value;
+  if (!name || !amount) return;
+  await fetch('/api/subscriptions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, amount: Number(amount), billing_day: Number(day)||1, category: document.getElementById('s-category').value})});
+  document.getElementById('s-name').value = '';
+  document.getElementById('s-amount').value = '';
+  loadSubs();
+}
+
+async function deleteSub(id) {
+  await fetch('/api/subscriptions/'+id, {method:'DELETE'});
+  loadSubs();
+}
+
+// ── CHALLENGES ────────────────────────────────────────────────────────────────
+const PRESET_CHALLENGES = [
+  {title:'No Eating Out for 7 Days', category:'Food', pts: 150},
+  {title:'Coffee Detox (5 days)', category:'Food', pts: 100},
+  {title:'Public Transport Only', category:'Transport', pts: 120},
+  {title:'No Shopping Week', category:'Shopping', pts: 140},
+  {title:'Zero Entertainment Spend', category:'Entertainment', pts: 100},
+];
+
+async function loadChallenges() {
+  const r = await fetch('/api/challenges');
+  const active = await r.json();
+  const pts = document.getElementById('sidebar-points').textContent;
+  document.getElementById('ch-points').textContent = pts;
+
+  // Set default end date
+  const d = new Date(); d.setDate(d.getDate() + 7);
+  document.getElementById('ch-end').value = d.toISOString().split('T')[0];
+
+  const el = document.getElementById('challenges-list');
+  const presets = PRESET_CHALLENGES.map(c => `
+    <div class="challenge-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div style="font-size:14px;font-weight:600;">${c.title}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;">Category: ${c.category}</div>
+        </div>
+        <div class="challenge-pts">+${c.pts} pts</div>
+      </div>
+      <button onclick='startPreset(${JSON.stringify(c)})' class="btn btn-ghost" style="margin-top:10px;width:100%;">Start Challenge</button>
+    </div>`).join('');
+
+  const userChallenges = active.map(c => `
+    <div class="challenge-card ${c.status==='completed'?'completed':''}">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div style="font-size:14px;font-weight:600;">${c.status==='completed'?'✅ ':''} ${c.title}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;">Started: ${c.start_date} · Ends: ${c.end_date||'—'}</div>
+        </div>
+      </div>
+      ${c.status!=='completed' ? `<button onclick="completeChallenge(${c.id})" class="btn btn-primary" style="margin-top:10px;">Mark Complete (+150 pts)</button>` : ''}
+    </div>`).join('');
+
+  el.innerHTML = (userChallenges ? '<div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Your Challenges</div>' + userChallenges : '') +
+    '<div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:14px 0 8px;">Preset Challenges</div>' + presets;
+}
+
+async function startPreset(c) {
+  const end = new Date(); end.setDate(end.getDate() + 7);
+  await fetch('/api/challenges', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title: c.title, category: c.category, end_date: end.toISOString().split('T')[0]})});
+  loadChallenges();
+}
+
+async function createChallenge() {
+  const title = document.getElementById('ch-title').value.trim();
+  const end = document.getElementById('ch-end').value;
+  if (!title) return;
+  await fetch('/api/challenges', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title, end_date: end})});
+  document.getElementById('ch-title').value = '';
+  loadChallenges();
+}
+
+async function completeChallenge(id) {
+  const r = await fetch('/api/challenges/'+id+'/complete', {method:'POST'});
+  const d = await r.json();
+  document.getElementById('sidebar-points').textContent = d.points;
+  loadChallenges();
+}
+
+// ── WALLETS ───────────────────────────────────────────────────────────────────
+let walletEdits = {};
+async function loadWallets() {
+  const r = await fetch('/api/wallets');
+  walletEdits = await r.json();
+  document.getElementById('wallet-edit-list').innerHTML = Object.entries(walletEdits).map(([k,v]) => `
+    <div class="form-group">
+      <label class="form-label">${WALLET_ICONS[k]||'💰'} ${k}</label>
+      <input class="form-input" type="number" value="${v}" oninput="walletEdits['${k}']=Number(this.value)">
+    </div>`).join('');
+}
+
+async function saveWallets() {
+  for (const [name, balance] of Object.entries(walletEdits)) {
+    await fetch('/api/wallets', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, balance})});
+  }
+  alert('✅ Wallets saved!');
+}
+
+async function clearAll() {
+  const exps = await fetch('/api/expenses?month=all');
+  // Just reload — user confirmed
+  location.reload();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  loadDashboard();
+  renderQuickAdds();
+});
+</script>
+</body>
+</html>
