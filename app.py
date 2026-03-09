@@ -79,6 +79,9 @@ def init_db():
         INSERT OR IGNORE INTO settings VALUES ('points', '0');
         INSERT OR IGNORE INTO settings VALUES ('onboarded', 'false');
         """)
+        # Always ensure current month has a budget set
+        month = datetime.date.today().strftime("%Y-%m")
+        db.execute("INSERT OR IGNORE INTO budgets VALUES (?, 30000)", (month,))
 
 # ── UTILS ─────────────────────────────────────────────────────────────────────
 def setting(key):
