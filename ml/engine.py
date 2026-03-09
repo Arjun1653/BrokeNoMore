@@ -546,24 +546,38 @@ class MLEngine:
         except:
             return "Financial data unavailable."
 
-    # ── 9. AI ADVICE (Anthropic Claude) ──────────────────────────────────────
+    # ── 9. AI ADVICE (Ollama - Local Llama 3.1) ──────────────────────────────
     def ai_advice(self, prompt: str, context: str) -> str:
         try:
-            import anthropic
-            client = anthropic.Anthropic()
-            response = client.messages.create(
-                model="claude-opus-4-5",
-                max_tokens=800,
-                system="""You are a smart, empathetic personal finance advisor for Indian users.
+            import requests
+            full_prompt = f"""{context}
+
+User question: {prompt}
+
+You are a smart, empathetic personal finance advisor for Indian users.
 Use ₹ symbol. Be practical, specific, and actionable.
 Use bullet points for lists. Keep responses concise (under 200 words).
 Reference the user's actual data when giving advice.
-Be encouraging but honest about overspending.""",
-                messages=[{"role": "user", "content": f"{context}\n\nUser question: {prompt}"}]
+Be encouraging but honest about overspending."""
+
+            response = requests.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": "llama3.1",
+                    "prompt": full_prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.7,
+                        "num_predict": 400,
+                    }
+                },
+                timeout=60
             )
-            return response.content[0].text
+            return response.json().get("response", "No response from model.")
+        except requests.exceptions.ConnectionError:
+            return "Ollama is not running. Open a terminal and run: ollama serve"
         except Exception as e:
-            return f"AI advice unavailable: {str(e)}\n\nMake sure ANTHROPIC_API_KEY is set in your environment."
+            return f"AI advice unavailable: {str(e)}"
 
     # ── 10. RECEIPT SCANNER ───────────────────────────────────────────────────
     def scan_receipt(self, img_bytes: bytes, media_type: str) -> dict:
