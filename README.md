@@ -1,77 +1,69 @@
-# 💰 Smart Expense Tracker — ML Powered
+# BrokeNoMore
 
-A fully local, ML-powered personal finance app built with Flask + scikit-learn + Claude AI.
+A personal expense tracker I built to stop wondering where my money goes every month. It runs locally on your machine, stores everything in a local database, and uses machine learning to get smarter about your spending habits over time.
 
 ---
 
-## 🚀 Quick Start (Windows)
+## What it does
 
-### Option 1: Double-click launcher
-```
-Double-click START.bat
-```
-Then open http://127.0.0.1:5000 in your browser.
+- Tracks expenses across multiple payment methods (Cash, UPI, Bank, Credit Card)
+- Automatically figures out the category of an expense based on what you type
+- Detects when you've spent unusually more than usual in any category
+- Predicts how much you'll spend by end of month based on your current pace
+- Groups your spending into patterns using clustering
+- Gives you a daily budget based on what's left
+- Tracks recurring subscriptions separately
+- Lets you set saving challenges and earn points for completing them
+- Has an AI advisor you can ask things like "I have ₹5000 left for 12 days, how do I manage?"
+- You can upload a photo of a bill and it'll read the amount and details automatically
 
-### Option 2: Manual
+---
+
+## Tech used
+
+- Python + Flask for the backend
+- scikit-learn for the ML models (Naive Bayes for categorization, Linear Regression for forecasting, K-Means for clustering, z-score for anomaly detection)
+- SQLite for local data storage
+- Claude API for the AI advisor and receipt scanning (optional)
+- Vanilla HTML/CSS/JS for the frontend
+
+---
+
+## Setup
+
+Make sure you have Python 3.9 or above installed.
+
 ```bash
 pip install -r requirements.txt
 python app.py
 ```
 
+Then open http://127.0.0.1:5000 in your browser.
+
+On Windows you can just double-click `START.bat` and it handles everything.
+
 ---
 
-## 🤖 AI Features Setup
+## AI features (optional)
 
-For AI Advisor and Receipt Scanning, set your Anthropic API key:
+The AI advisor and receipt scanner use the Anthropic API. If you want those, set your API key before running:
 
-**Windows (this session):**
-```cmd
-set ANTHROPIC_API_KEY=sk-ant-...your-key...
-python app.py
+```bash
+set ANTHROPIC_API_KEY=your_key_here
 ```
 
-**Windows (permanent):**
-1. Search "Environment Variables" in Start menu
-2. Add `ANTHROPIC_API_KEY` = your key
-3. Restart terminal
-
-Get your key at: https://console.anthropic.com
-
-> Note: All ML features (categorization, anomaly detection, forecasting, clustering, habit score) work **without** the API key. Only AI Advisor chat and Receipt Scanning need it.
+Everything else works fine without it.
 
 ---
 
-## 🧠 ML Models Used
+## Notes
 
-| Feature | Algorithm |
-|---------|-----------|
-| Auto-categorization | Naive Bayes (MultinomialNB) with TF-IDF |
-| Anomaly detection | Statistical z-score + Isolation Forest |
-| Spending forecast | Linear Regression on time series |
-| Spending clusters | K-Means clustering |
-| Habit scoring | ML feature extraction + rule engine |
-| AI Advice | Anthropic Claude (via API) |
-| Receipt scanning | Claude Vision (via API) |
-| NL queries | Rule-based NLP on SQLite data |
-
-The categorizer **learns from your data** — the more you log, the smarter it gets.
+- All your data stays on your machine, nothing is sent anywhere (except the AI calls if you use that feature)
+- The categorizer learns from your own expenses over time, so it gets more accurate the more you use it
+- Tested on Windows 11
 
 ---
 
-## ✨ Features
+## Why I built this
 
-- **Dashboard** — balance, budget progress, habit score, alerts
-- **Add Expense** — manual entry with ML auto-categorization, receipt scanning
-- **Insights** — category breakdown, daily chart, anomaly detection, K-Means clusters, 30-day forecast
-- **AI Advisor** — Claude-powered financial advice with full context
-- **Subscriptions** — monthly subscription tracker with billing days
-- **Challenges** — gamified saving goals with points
-- **Wallets** — Cash, Bank, UPI, Credit Card tracking
-- **Export** — CSV download of all expenses
-- **Natural Language Search** — "How much on food this month?"
-
----
-
-## 📁 Data
-
-All data is stored locally in `data/expenses.db` (SQLite). No cloud, no accounts.
+I kept going over budget without realizing it until the end of the month. Most expense apps are either too simple or require a subscription themselves, which felt ironic. Wanted something that actually learns from how I spend rather than just logging numbers.
