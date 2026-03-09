@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Expense Tracker</title>
+<title>BrokeNoMore</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -175,8 +175,8 @@ svg.forecast { width: 100%; height: 100px; }
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="logo">
-      <div class="logo-name">₹ Spendly</div>
-      <div class="logo-sub">ML-Powered</div>
+      <div class="logo-name">BrokeNoMore</div>
+      <div class="logo-sub">know where it goes</div>
     </div>
     <nav>
       <div class="nav-item active" onclick="showPage('dashboard')">
@@ -189,7 +189,7 @@ svg.forecast { width: 100%; height: 100px; }
         <span class="nav-icon">📊</span> Insights
       </div>
       <div class="nav-item" onclick="showPage('advisor')">
-        <span class="nav-icon">🤖</span> AI Advisor
+        <span class="nav-icon">💬</span> Ask Anything
       </div>
       <div class="nav-item" onclick="showPage('subscriptions')">
         <span class="nav-icon">📱</span> Subscriptions
@@ -207,7 +207,7 @@ svg.forecast { width: 100%; height: 100px; }
     <div class="sidebar-bottom">
       <div class="points-badge">
         <div class="points-val" id="sidebar-points">0</div>
-        <div class="points-label">⭐ Points</div>
+        <div class="points-label">streak points</div>
       </div>
     </div>
   </div>
@@ -275,7 +275,7 @@ svg.forecast { width: 100%; height: 100px; }
 
           <!-- Habit Score -->
           <div class="card">
-            <div class="card-title">Habit Score</div>
+            <div class="card-title">Money Habits</div>
             <div class="score-wrap">
               <div class="score-ring">
                 <svg width="80" height="80" viewBox="0 0 80 80" style="transform:rotate(-90deg)">
@@ -313,11 +313,11 @@ svg.forecast { width: 100%; height: 100px; }
         <div class="gap-16">
           <!-- Receipt upload -->
           <div class="card">
-            <div class="card-title">📸 Scan Receipt (AI)</div>
+            <div class="card-title">📸 Snap a Bill</div>
             <div class="receipt-drop" onclick="document.getElementById('receipt-input').click()" id="receipt-drop">
               <div style="font-size:36px;margin-bottom:8px">📸</div>
-              <div style="font-size:13px;color:var(--muted)">Click to upload bill/receipt</div>
-              <div style="font-size:11px;color:#444;margin-top:4px">AI will extract details automatically</div>
+              <div style="font-size:13px;color:var(--muted)">Click to upload a bill or receipt</div>
+              <div style="font-size:11px;color:#444;margin-top:4px">it'll read the amount for you</div>
             </div>
             <input type="file" id="receipt-input" accept="image/*" style="display:none" onchange="scanReceipt(this)">
           </div>
@@ -371,7 +371,7 @@ svg.forecast { width: 100%; height: 100px; }
             </div>
           </div>
           <div class="card" id="ai-category-suggest" style="display:none;">
-            <div class="card-title">🤖 ML Category Detected</div>
+            <div class="card-title">✦ Category Detected</div>
             <div id="category-explain" style="font-size:13px;color:var(--muted);line-height:1.6;"></div>
           </div>
         </div>
@@ -402,29 +402,29 @@ svg.forecast { width: 100%; height: 100px; }
 
         <!-- Anomalies -->
         <div class="card" id="anomaly-section">
-          <div class="card-title">🔍 Anomaly Detection (ML)</div>
-          <div id="anomaly-list"><div style="color:var(--muted);font-size:13px;">Analyzing spending patterns...</div></div>
+          <div class="card-title">🔍 Unusual Spends</div>
+          <div id="anomaly-list"><div style="color:var(--muted);font-size:13px;">Looking for anything out of the ordinary...</div></div>
         </div>
 
         <!-- Spending Clusters -->
         <div class="card">
-          <div class="card-title">🎯 Spending Clusters (K-Means ML)</div>
-          <div id="cluster-list"><div style="color:var(--muted);font-size:13px;">Clustering your expenses...</div></div>
+          <div class="card-title">🎯 How You Spend</div>
+          <div id="cluster-list"><div style="color:var(--muted);font-size:13px;">Grouping your expenses...</div></div>
         </div>
 
         <!-- Forecast -->
         <div class="card">
-          <div class="card-title">📈 30-Day Spending Forecast (ML)</div>
+          <div class="card-title">📈 Where You're Headed</div>
           <div id="forecast-info" style="font-size:13px;color:var(--muted);margin-bottom:12px;"></div>
           <div id="forecast-chart" style="overflow-x:auto;"></div>
         </div>
 
         <!-- NL Query -->
         <div class="card">
-          <div class="card-title">🔍 Natural Language Search</div>
+          <div class="card-title">🔍 Search Your Expenses</div>
           <div style="display:flex;gap:10px;margin-bottom:12px;">
-            <input class="form-input" id="nl-query" placeholder="How much did I spend on food this month?" style="flex:1;" onkeydown="if(event.key==='Enter') nlQuery()">
-            <button class="btn btn-primary" style="width:auto;padding:11px 20px;" onclick="nlQuery()">Ask</button>
+            <input class="form-input" id="nl-query" placeholder="e.g. how much did I spend on food this month?" style="flex:1;" onkeydown="if(event.key==='Enter') nlQuery()">
+            <button class="btn btn-primary" style="width:auto;padding:11px 20px;" onclick="nlQuery()">Go</button>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
             <button class="btn btn-ghost" onclick="setQuery('How much on food this month?')">Food spend</button>
@@ -443,8 +443,8 @@ svg.forecast { width: 100%; height: 100px; }
     <!-- ─── AI ADVISOR ─────────────────────────────────────────────────── -->
     <div id="page-advisor" class="page">
       <div class="section-header">
-        <div class="section-title">AI Advisor</div>
-        <div style="font-size:12px;color:var(--muted);">Powered by Claude AI + ML</div>
+        <div class="section-title">Ask Anything</div>
+        <div style="font-size:12px;color:var(--muted);">your money, your questions</div>
       </div>
 
       <div class="gap-16">
@@ -453,22 +453,22 @@ svg.forecast { width: 100%; height: 100px; }
           <button class="card" style="cursor:pointer;text-align:left;border:none;background:var(--card);transition:border-color 0.2s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="askAdvice('Give me personalized budget advice based on my spending habits and remaining balance. Be specific.')">
             <div style="font-size:28px;margin-bottom:8px">💰</div>
             <div style="font-size:14px;font-weight:600;">Budget Advice</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Personalized tips based on your data</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">tell me what's eating my wallet</div>
           </button>
           <button class="card" style="cursor:pointer;text-align:left;border:none;background:var(--card);transition:border-color 0.2s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="askAdvice('Analyze my spending patterns and tell me specifically where I should cut back to save more money this month.')">
             <div style="font-size:28px;margin-bottom:8px">📉</div>
             <div style="font-size:14px;font-weight:600;">Where to Cut Back</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px;">ML-analyzed reduction opportunities</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">be honest, i can take it</div>
           </button>
           <button class="card" style="cursor:pointer;text-align:left;border:none;background:var(--card);transition:border-color 0.2s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="askAdvice('Help me plan my remaining budget optimally to last till the end of the month. Give me a day-wise plan.')">
             <div style="font-size:28px;margin-bottom:8px">📅</div>
-            <div style="font-size:14px;font-weight:600;">Month-End Plan</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Day-by-day spending plan</div>
+            <div style="font-size:14px;font-weight:600;">Make it Last</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">help me survive till the 1st</div>
           </button>
           <button class="card" style="cursor:pointer;text-align:left;border:none;background:var(--card);transition:border-color 0.2s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="askAdvice('Give me 5 powerful insights about my spending habits and what they say about my financial health.')">
-            <div style="font-size:28px;margin-bottom:8px">🏆</div>
-            <div style="font-size:14px;font-weight:600;">Spending Insights</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Deep-dive habit analysis</div>
+            <div style="font-size:28px;margin-bottom:8px">🔎</div>
+            <div style="font-size:14px;font-weight:600;">Read My Habits</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">what does my spending say about me</div>
           </button>
         </div>
 
@@ -476,12 +476,12 @@ svg.forecast { width: 100%; height: 100px; }
         <div class="card">
           <div class="card-title">Ask Anything</div>
           <textarea class="form-input" id="advisor-query" style="min-height:80px;resize:vertical;" placeholder="e.g. I have ₹5000 left for 12 days, how should I spend it? Or: What's the biggest financial mistake I'm making?"></textarea>
-          <button class="btn btn-primary" style="margin-top:12px;" onclick="askAdvice(document.getElementById('advisor-query').value)">Ask AI Advisor</button>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="askAdvice(document.getElementById('advisor-query').value)">Ask</button>
         </div>
 
-        <!-- AI Response -->
+        <!-- Response -->
         <div class="ai-bubble" id="advice-bubble" style="display:none;">
-          <div class="ai-header"><span>🤖</span> AI ADVISOR</div>
+          <div class="ai-header"><span>💬</span> ANSWER</div>
           <div id="advice-text"></div>
         </div>
       </div>
@@ -538,7 +538,7 @@ svg.forecast { width: 100%; height: 100px; }
     <div id="page-challenges" class="page">
       <div class="section-header">
         <div class="section-title">Challenges 🏆</div>
-        <div style="font-size:12px;color:var(--muted);">Gamify your finances</div>
+        <div style="font-size:12px;color:var(--muted);">make saving feel like a game</div>
       </div>
       <div class="gap-16">
         <div class="card" style="background:linear-gradient(135deg,rgba(124,106,247,0.1),rgba(54,217,196,0.1));border-color:rgba(124,106,247,0.3);">
@@ -847,9 +847,9 @@ async function autoDetectCategory() {
     const r = await fetch('/api/categorize', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({description: desc, amount: amt})});
     const d = await r.json();
     document.getElementById('f-category').value = d.category;
-    document.getElementById('ml-badge').textContent = '✨ ML auto-detected';
+    document.getElementById('ml-badge').textContent = '✦ auto-detected';
     const explain = document.getElementById('category-explain');
-    explain.textContent = `Based on your description "${desc}", the ML model classified this as "${d.category}".`;
+    explain.textContent = `"${desc}" looks like ${d.category} to me. Change it if I got it wrong.`;
     document.getElementById('ai-category-suggest').style.display = 'block';
   }, 500);
 }
@@ -1007,7 +1007,7 @@ async function askAdvice(prompt) {
   const bubble = document.getElementById('advice-bubble');
   const textEl = document.getElementById('advice-text');
   bubble.style.display = 'block';
-  textEl.innerHTML = '<div class="ai-thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:8px;color:var(--muted);">Analyzing your finances...</span></div>';
+  textEl.innerHTML = '<div class="ai-thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:8px;color:var(--muted);">looking at your numbers...</span></div>';
   bubble.scrollIntoView({behavior:'smooth', block:'start'});
   const r = await fetch('/api/advice', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt})});
   const d = await r.json();
