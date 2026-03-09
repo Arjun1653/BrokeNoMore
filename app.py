@@ -2,7 +2,7 @@
 Smart Expense Tracker - Flask Backend
 ML-powered personal finance app for Indian users
 """
-import os, json, datetime, sqlite3, base64, io, calendar
+import os, json, datetime, sqlite3, base64, io, calendar, zoneinfo
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from ml.engine import MLEngine
@@ -94,10 +94,15 @@ def set_setting(key, val):
         db.execute("INSERT OR REPLACE INTO settings VALUES (?,?)", (key, str(val)))
 
 def current_month():
-    return datetime.date.today().strftime("%Y-%m")
+    return datetime.datetime.now(zoneinfo.ZoneInfo("Asia/Kolkata")).strftime("%Y-%m")
+
+IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 
 def today():
-    return datetime.date.today().isoformat()
+    return datetime.datetime.now(IST).date().isoformat()
+
+def now_ist():
+    return datetime.datetime.now(IST).date()
 
 def month_budget():
     with get_db() as db:
@@ -129,7 +134,7 @@ def index():
 def dashboard():
     spent = month_spent()
     budget = month_budget()
-    today_d = datetime.date.today()
+    today_d = now_ist()
     days_in_month = calendar.monthrange(today_d.year, today_d.month)[1]
     days_left = days_in_month - today_d.day
     day_of_month = today_d.day
