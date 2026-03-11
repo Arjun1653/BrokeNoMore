@@ -1,8 +1,9 @@
 """
-Smart Expense Tracker - Flask Backend
-ML-powered personal finance app for Indian users
+BrokeNoMore - Flask Backend
+ML-powered personal finance app
 """
-import os, json, datetime, sqlite3, base64, io, calendar, zoneinfo
+import os, json, datetime, sqlite3, base64, io, calendar, zoneinfo, subprocess, time, threading
+import requests as http_requests
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from ml.engine import MLEngine
@@ -10,6 +11,40 @@ from ml.engine import MLEngine
 app = Flask(__name__)
 DB_PATH = Path("data/expenses.db")
 ml = MLEngine(DB_PATH)
+
+# ── OLLAMA AUTO-START ─────────────────────────────────────────────────────────
+def ensure_ollama():
+    """Start Ollama if not running, runs in background thread."""
+    def _start():
+        try:
+            r = http_requests.get("http://localhost:11434/api/tags", timeout=3)
+            if r.status_code == 200:
+                print("  ✓  Ollama already running")
+                return
+        except:
+            pass
+        print("  ⚡  Starting Ollama in background...")
+        try:
+            subprocess.Popen(
+                ["ollama", "serve"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+            )
+            # Wait for it to come up
+            for _ in range(15):
+                time.sleep(1)
+                try:
+                    r = http_requests.get("http://localhost:11434/api/tags", timeout=2)
+                    if r.status_code == 200:
+                        print("  ✓  Ollama started")
+                        return
+                except:
+                    pass
+            print("  ⚠  Ollama didn't respond in time — AI features may be slow to start")
+        except FileNotFoundError:
+            print("  ⚠  Ollama not found. Install from ollama.com")
+    threading.Thread(target=_start, daemon=True).start()
 
 # ── DB SETUP ─────────────────────────────────────────────────────────────────
 def get_db():
@@ -276,6 +311,16 @@ def nl_query():
     result = ml.natural_language_query(q)
     return jsonify({"answer": result})
 
+@app.route("/api/mascot/react", methods=["POST"])
+def mascot_react():
+    d = request.json
+    action = d.get("action", "")
+    category = d.get("category", "")
+    description = d.get("description", "")
+    context = ml.build_context()
+    reaction = ml.mascot_reaction(action, category, description, context)
+    return jsonify({"message": reaction})
+
 @app.route("/api/advice", methods=["POST"])
 def get_advice():
     d = request.json
@@ -437,8 +482,9 @@ def export_csv():
 
 if __name__ == "__main__":
     init_db()
+    ensure_ollama()
     print("\n" + "="*55)
-    print("  💰  Smart Expense Tracker  (ML-Powered)")
+    print("  💰  BrokeNoMore  (ML-Powered)")
     print("="*55)
     print("  → Open http://127.0.0.1:5000 in your browser")
     print("  → Press Ctrl+C to stop")

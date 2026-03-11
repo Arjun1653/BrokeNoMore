@@ -1306,34 +1306,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
 // ── MASCOT ENGINE ─────────────────────────────────────────────────────────────
-const MASCOT_MESSAGES = {
-  happy:     ["Under budget! Keep it up 🎉", "You're doing great this month!", "Savings go brrr 💸", "Pocket looking healthy 👌", "This is the way."],
-  warn:      ["Slow down a little...", "75% budget used. Careful now.", "Getting close to the limit 👀", "Easy on the wallet!", "Maybe skip the next order?"],
-  danger:    ["Bro. BROOOO. 💀", "Your wallet is crying rn", "Budget: gone. Vibes: bad.", "At this rate... yikes.", "Have you tried... not spending?"],
-  food:      ["Can't help it 🍛", "Another food expense huh", "Bro eats good at least", "Stomach > savings ig", "Worth it. Probably."],
-  transport: ["Getting around I see 🚌", "Petrol prices are wild tbh", "Uber again? Bold move.", "At least you're going places.", "Travel expenses logged ✓"],
-  shopping:  ["A little treat 🛍️", "Retail therapy hits different", "Was it on sale tho?", "The algorithm got you again", "Worth every rupee. Maybe."],
-  girlfriend:["Ah. I see. 👀", "Investing in relationships 😏", "Finance bro by day...", "No comment. Just logging it.", "Noted. No judgement. 😶"],
-  entertainment:["Fun money well spent 🎬", "Can't be productive all the time", "Treat yourself occasionally 🍿", "This is a valid expense. Mostly.", "Netflix and... spending 💸"],
-  health:    ["Investing in yourself 💪", "Health first, always.", "This one's justified fr", "Body > bank balance", "Good call on this one."],
-  rent:      ["Big one 🏠", "Shelter secured.", "Landlord fed for the month", "Home is where the money goes", "Necessary evil ✓"],
-  idle:      ["Still here 👁️", "Log something!", "I'm watching your wallet...", "Paisa the owl, reporting in.", "Click me, I dare you."],
-  income:    ["Money IN? Let's gooo 💰", "Bag secured 🎒", "Credited! Now don't blow it.", "Income logged. Respect.", "The grind pays off 💸"],
-  night:     ["Still up? Same 🦉", "Night owl hours 🌙", "Budgeting at 3am is valid", "Insomnia + expense tracking = us", "The owls are not what they seem"],
-};
-
 let mascotX = 280;
 let mascotDir = 1;
 let mascotFlipped = false;
 let mascotPaused = false;
-let mascotMood = "happy";
 let mascotBubbleTimeout = null;
-let mascotMoveInterval = null;
-let mascotMessageInterval = null;
-let lastExpenseCategory = null;
-let lastAction = null;
+let mascotThinking = false;
 
-function getMascotMood() {
+// Fallback messages if Llama is still loading
+const FALLBACK = {
+  happy: ["Under budget! Keep it up 🎉", "Pocket looking healthy 👌", "This is the way."],
+  warn:  ["Getting close to the limit 👀", "Easy on the wallet!", "Slow down a little..."],
+  danger:["Bro. BROOOO. 💀", "Your wallet is crying rn", "Budget: gone. Vibes: bad."],
+  idle:  ["Still here 👁️", "Log something!", "Paisa the owl, reporting in."],
+  night: ["Still up? Same 🦉", "Night owl hours 🌙", "Budgeting at 3am is valid"],
+};
+
+function getFallbackMood() {
   if (!window.dashData) return "idle";
   const d = window.dashData;
   const ratio = d.spent / d.budget;
@@ -1344,7 +1333,7 @@ function getMascotMood() {
   return "happy";
 }
 
-function showMascotBubble(msg, duration = 4000) {
+function showMascotBubble(msg, duration = 5000) {
   const bubble = document.getElementById("mascot-bubble");
   bubble.textContent = msg;
   bubble.classList.add("show");
@@ -1352,97 +1341,67 @@ function showMascotBubble(msg, duration = 4000) {
   mascotBubbleTimeout = setTimeout(() => bubble.classList.remove("show"), duration);
 }
 
+function showMascotThinking() {
+  const bubble = document.getElementById("mascot-bubble");
+  bubble.textContent = "...";
+  bubble.classList.add("show");
+}
+
 function setMascotEyes(mood) {
   const pl = document.getElementById("pupil-l");
   const pr = document.getElementById("pupil-r");
   const beak = document.getElementById("mascot-beak");
-  const leftEye = pl?.parentElement?.querySelector("circle:nth-child(1)");
-
+  if (!pl) return;
   if (mood === "danger") {
-    pl && (pl.setAttribute("r", "1.5"));
-    pr && (pr.setAttribute("r", "1.5"));
-    // X eyes via transform
-    pl && pl.setAttribute("fill", "#ff4757");
-    pr && pr.setAttribute("fill", "#ff4757");
-    beak && beak.setAttribute("points", "24,27 30,27 27,25"); // frown
+    pl.setAttribute("r","1.5"); pr.setAttribute("r","1.5");
+    pl.setAttribute("fill","#ff4757"); pr.setAttribute("fill","#ff4757");
+    beak && beak.setAttribute("points","24,27 30,27 27,25");
   } else if (mood === "warn") {
-    pl && (pl.setAttribute("r", "2.5"));
-    pr && (pr.setAttribute("r", "2.5"));
-    pl && pl.setAttribute("fill", "#ffc94a");
-    pr && pr.setAttribute("fill", "#ffc94a");
-    beak && beak.setAttribute("points", "24,26 30,26 27,29");
-  } else if (mood === "happy" || mood === "income") {
-    pl && pl.setAttribute("r", "2");
-    pr && pr.setAttribute("r", "2");
-    pl && pl.setAttribute("fill", "#36d9c4");
-    pr && pr.setAttribute("fill", "#36d9c4");
-    beak && beak.setAttribute("points", "24,25 30,25 27,29");
+    pl.setAttribute("r","2.5"); pr.setAttribute("r","2.5");
+    pl.setAttribute("fill","#ffc94a"); pr.setAttribute("fill","#ffc94a");
+    beak && beak.setAttribute("points","24,26 30,26 27,29");
   } else if (mood === "night") {
-    pl && pl.setAttribute("r", "3");
-    pr && pr.setAttribute("r", "3");
-    pl && pl.setAttribute("fill", "#7c6af7");
-    pr && pr.setAttribute("fill", "#7c6af7");
+    pl.setAttribute("r","3"); pr.setAttribute("r","3");
+    pl.setAttribute("fill","#7c6af7"); pr.setAttribute("fill","#7c6af7");
   } else {
-    pl && pl.setAttribute("r", "2");
-    pr && pr.setAttribute("r", "2");
-    pl && pl.setAttribute("fill", "#36d9c4");
-    pr && pr.setAttribute("fill", "#36d9c4");
-    beak && beak.setAttribute("points", "24,25 30,25 27,29");
+    pl.setAttribute("r","2"); pr.setAttribute("r","2");
+    pl.setAttribute("fill","#36d9c4"); pr.setAttribute("fill","#36d9c4");
+    beak && beak.setAttribute("points","24,25 30,25 27,29");
   }
 }
 
-function mascotRandomMessage(mood) {
-  const pool = MASCOT_MESSAGES[mood] || MASCOT_MESSAGES.idle;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
+async function mascotReact(action, category, description) {
+  if (mascotThinking) return;
+  mascotThinking = true;
+  const mood = getFallbackMood();
+  setMascotEyes(action === "income_added" ? "happy" : mood);
+  showMascotThinking();
 
-function mascotReact(action, category) {
-  lastAction = action;
-  lastExpenseCategory = category;
-  let mood = "happy";
-  let msg = "";
-
-  if (action === "expense_added") {
-    const cat = (category || "").toLowerCase();
-    if (cat.includes("girlfriend") || cat.includes("date") || cat.includes("gift")) {
-      mood = "girlfriend"; msg = mascotRandomMessage("girlfriend");
-    } else if (cat === "food") {
-      mood = "food"; msg = mascotRandomMessage("food");
-    } else if (cat === "transport") {
-      mood = "transport"; msg = mascotRandomMessage("transport");
-    } else if (cat === "shopping") {
-      mood = "shopping"; msg = mascotRandomMessage("shopping");
-    } else if (cat === "entertainment") {
-      mood = "entertainment"; msg = mascotRandomMessage("entertainment");
-    } else if (cat === "health") {
-      mood = "health"; msg = mascotRandomMessage("health");
-    } else if (cat === "rent") {
-      mood = "rent"; msg = mascotRandomMessage("rent");
-    } else {
-      mood = getMascotMood(); msg = mascotRandomMessage(mood);
-    }
-  } else if (action === "income_added") {
-    mood = "income"; msg = mascotRandomMessage("income");
-  } else if (action === "page_change") {
-    mood = getMascotMood(); msg = mascotRandomMessage(mood);
-  }
-
-  setMascotEyes(mood);
-  showMascotBubble(msg, 5000);
-  // bounce animation
+  // bounce
   const body = document.getElementById("mascot-body");
-  body.style.transition = "transform 0.1s";
   const isFlipped = document.getElementById("mascot").classList.contains("mascot-flipped");
   body.style.transform = isFlipped ? "scaleX(-1) translateY(-8px)" : "translateY(-8px)";
   setTimeout(() => { body.style.transform = isFlipped ? "scaleX(-1)" : ""; }, 200);
+
+  try {
+    const r = await fetch("/api/mascot/react", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({action, category: category||"", description: description||""})
+    });
+    const d = await r.json();
+    showMascotBubble(d.message || "Noted. 🦉", 6000);
+  } catch {
+    const pool = FALLBACK[mood] || FALLBACK.idle;
+    showMascotBubble(pool[Math.floor(Math.random() * pool.length)], 5000);
+  } finally {
+    mascotThinking = false;
+  }
 }
 
 function mascotClick() {
   mascotPaused = !mascotPaused;
-  const mood = getMascotMood();
-  const msg = mascotPaused ? "Taking a break 💤" : mascotRandomMessage(mood);
-  setMascotEyes(mood);
-  showMascotBubble(msg, 3000);
+  showMascotBubble(mascotPaused ? "Taking a break 💤" : "Back on patrol 🦉", 3000);
 }
 
 function startMascotWalk() {
@@ -1451,48 +1410,28 @@ function startMascotWalk() {
   const mascotWidth = 60;
   const minX = 230;
 
-  mascotMoveInterval = setInterval(() => {
+  setInterval(() => {
     if (mascotPaused) return;
     const maxX = window.innerWidth - mascotWidth - 20;
     mascotX += mascotDir * 1.2;
-
     if (mascotX >= maxX) { mascotDir = -1; mascotFlipped = true; }
     if (mascotX <= minX) { mascotDir = 1; mascotFlipped = false; }
-
     wrap.style.left = mascotX + "px";
-    if (mascotFlipped) {
-      mascotEl.classList.add("mascot-flipped");
-    } else {
-      mascotEl.classList.remove("mascot-flipped");
-    }
+    mascotFlipped ? mascotEl.classList.add("mascot-flipped") : mascotEl.classList.remove("mascot-flipped");
   }, 16);
 
-  // Periodic random messages
-  mascotMessageInterval = setInterval(() => {
-    if (mascotPaused) return;
-    const mood = getMascotMood();
-    setMascotEyes(mood);
-    // Only show bubble occasionally
-    if (Math.random() < 0.4) {
-      showMascotBubble(mascotRandomMessage(mood), 4000);
-    }
-  }, 12000);
+  // Periodic ambient reaction every 90 seconds
+  setInterval(() => {
+    if (mascotPaused || mascotThinking) return;
+    mascotReact("idle", "", "");
+  }, 90000);
 }
-
-// Hook into existing functions to trigger reactions
-const _origSubmitExpense = window.submitExpense;
-const _origSubmitIncome = window.submitIncome;
 
 document.addEventListener("DOMContentLoaded", () => {
   startMascotWalk();
-  setTimeout(() => {
-    showMascotBubble("Paisa the owl, at your service 🦉", 4000);
-  }, 1500);
+  setTimeout(() => showMascotBubble("Paisa the owl, reporting in 🦉", 4000), 1500);
 
-  // Patch submitExpense to trigger mascot
-  const origBtn = document.querySelector('[onclick="submitExpense()"]');
-
-  // Override via fetch monkey-patch approach — hook after expense added
+  // Monkey-patch fetch to intercept expense/income additions
   const origFetch = window.fetch;
   window.fetch = async function(...args) {
     const result = await origFetch.apply(this, args);
@@ -1502,15 +1441,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const clone = result.clone();
         clone.json().then(d => {
           if (d.ok) {
-            let cat = "";
-            try { cat = JSON.parse(args[1].body).category || ""; } catch {}
-            setTimeout(() => mascotReact("expense_added", cat), 300);
+            let cat = "", desc = "";
+            try { const b = JSON.parse(args[1].body); cat = b.category||""; desc = b.description||""; } catch {}
+            setTimeout(() => mascotReact("expense_added", cat, desc), 300);
           }
         }).catch(() => {});
       } else if (url === "/api/income" && args[1]?.method === "POST") {
         const clone = result.clone();
         clone.json().then(d => {
-          if (d.ok) setTimeout(() => mascotReact("income_added", ""), 300);
+          if (d.ok) setTimeout(() => mascotReact("income_added", "", ""), 300);
         }).catch(() => {});
       }
     }
@@ -1518,11 +1457,11 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 });
 
-// React on page change
 const _origShowPage = window.showPage;
 window.showPage = function(name) {
   if (_origShowPage) _origShowPage.apply(this, arguments);
-  setTimeout(() => mascotReact("page_change", ""), 600);
+  // Only react on page change occasionally
+  if (Math.random() < 0.35) setTimeout(() => mascotReact("page_change", "", ""), 800);
 };
 </script>
 </body>

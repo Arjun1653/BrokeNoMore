@@ -137,14 +137,53 @@ class MLEngine:
         self._train_clusters()
 
     def categorize(self, description: str, amount: float = 0) -> str:
-        """Predict category using trained ML model"""
-        if not self._trained:
-            return self._rule_based_category(description)
+        """Smart categorization via Llama — falls back to ML/rules if Llama unavailable"""
         try:
-            pred = self._clf.predict([description.lower()])[0]
-            return pred
+            import requests
+            prompt = f"""You are a categorizer for an Indian personal expense tracker.
+Given this expense description: "{description}" (amount: ₹{amount})
+
+Reply with ONLY one word from this exact list:
+Food, Transport, Shopping, Entertainment, Health, Utilities, Rent, Subscriptions, Other
+
+Examples:
+- "petrol for bike" → Transport
+- "filled up activa" → Transport  
+- "fuel bunk" → Transport
+- "VIT canteen milkshake" → Food
+- "chicken dinner" → Food
+- "blinkit snacks" → Food
+- "Netflix" → Subscriptions
+- "gym fees" → Health
+- "room rent" → Rent
+- "electricity bill" → Utilities
+
+Reply with just the category word, nothing else."""
+
+            response = requests.post(
+                "http://localhost:11434/api/generate",
+                json={"model": "llama3.1", "prompt": prompt, "stream": False,
+                      "options": {"temperature": 0.1, "num_predict": 10}},
+                timeout=8
+            )
+            result = response.json().get("response", "").strip()
+            # Clean and validate
+            for cat in CATEGORIES:
+                if cat.lower() in result.lower():
+                    return cat
+            # fallback if Llama gives unexpected answer
+            return self._ml_categorize(description)
         except:
-            return self._rule_based_category(description)
+            return self._ml_categorize(description)
+
+    def _ml_categorize(self, description: str) -> str:
+        """Fallback: trained Naive Bayes or rule-based"""
+        if self._trained:
+            try:
+                return self._clf.predict([description.lower()])[0]
+            except:
+                pass
+        return self._rule_based_category(description)
 
     def _rule_based_category(self, desc: str) -> str:
         d = desc.lower()
@@ -579,7 +618,53 @@ Be encouraging but honest about overspending."""
         except Exception as e:
             return f"AI advice unavailable: {str(e)}"
 
-    # ── 10. RECEIPT SCANNER ───────────────────────────────────────────────────
+    # ── 10. MASCOT REACTIONS (Ollama - Llama 3.1) ─────────────────────────────
+    def mascot_reaction(self, action: str, category: str, description: str, context: str) -> str:
+        try:
+            import requests
+            hour = datetime.datetime.now().hour
+            time_context = "late night" if 0 <= hour < 5 else "morning" if 5 <= hour < 12 else "afternoon" if 12 <= hour < 17 else "evening"
+
+            prompt = f"""You are Paisa, a wise and sarcastic owl mascot living inside an expense tracker app for an Indian college student.
+You have access to their financial data and react to what they do in the app.
+
+{context}
+Current time: {time_context}
+Action: {action}
+Expense description: "{description}"
+Category: {category}
+
+Generate ONE short reaction (max 12 words, no quotes) that is:
+- Witty, sarcastic or funny but not mean
+- Specific to what they just did (reference the actual expense if possible)
+- Feels like something a sarcastic desi friend would say
+- Occasionally use Indian slang or references (yaar, bhai, arre, etc.)
+- If it's food: comment on the eating habits
+- If it's girlfriend/date/gift: be playfully teasing
+- If they're low on budget: be dramatically concerned
+- If income was added: be genuinely hyped
+- Never use hashtags or emojis in the text (emojis allowed at end only)
+
+Reply with ONLY the reaction text, nothing else."""
+
+            response = requests.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": "llama3.1",
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {"temperature": 0.9, "num_predict": 40}
+                },
+                timeout=15
+            )
+            result = response.json().get("response", "").strip()
+            # Clean up any quotes Llama might add
+            result = result.strip('"\'').strip()
+            return result if result else "Noted. 🦉"
+        except:
+            return "Logged! 🦉"
+
+
     def scan_receipt(self, img_bytes: bytes, media_type: str) -> dict:
         try:
             import anthropic
