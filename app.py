@@ -469,7 +469,7 @@ def income_summary():
         "all": all_income,
     })
 
-@app.route("/api/export/csv")
+
 def export_csv():
     with get_db() as db:
         rows = db.execute("SELECT * FROM expenses ORDER BY date DESC").fetchall()
